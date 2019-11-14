@@ -1,10 +1,11 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() => runApp(MovieApp());
 
-var domain = "https://image.tmdb.org/t/p/w500/";
+var domain = "https://image.tmdb.org/t/p/w500";
 var domainO = "https://image.tmdb.org/t/p/original/";
 
 var backdrop = [
@@ -40,10 +41,43 @@ var movies = [
   "/q5298SICFzqMcKtQoBktk8p6FH.jpg",
 ];
 
+var movieTitle = [
+  "Joker",
+  "Fast & Furious: Hobbs & Shaw",
+  "The Lion King",
+  "Dora and The Lost City",
+  "Spiderman: Far From Home",
+  "Angel Has Fallen",
+  "The King",
+  "Toy Story 4",
+  "The Angry Birds 2 Movie",
+  "Terminator: Dark Fate",
+  "Avengers: End Game",
+  "Good Boys",
+  "Scary Stories: To Tell In The Dark",
+];
+
+var movieId = [
+  "zAGVQLHvwOY",
+  "HZ7PAyCDwEg",
+  "7TavVZMewpY",
+  "gUTtJjV852c",
+  "Nt9L1jCKGnE",
+  "isVtXH7n9lI",
+  "svVykTznk9Q",
+  "wmiIUN-7qhE",
+  "cW7NAxn3oVQ",
+  "oxy8udgWRmo",
+  "TcMBFSGVi1c",
+  "zPXqwAGmX04",
+  "Vlya92LZqZw"
+];
+
 class MovieApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: HomePage(),
     );
   }
@@ -80,33 +114,78 @@ class _HomeViewState extends State<HomeView> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: <Widget>[
-        Opacity(
+    return Stack(fit: StackFit.loose, children: <Widget>[
+      Container(
+        height: MediaQuery.of(context).size.height * 0.65,
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+        ),
+        child: Opacity(
           opacity: 0.9,
           child: AnimatedContainer(
-              color: Colors.black,
-              duration: Duration(milliseconds: 500),
-              height: MediaQuery.of(context).size.height * 0.8,
-              width: double.infinity,
-              child: FadeInImage.assetNetwork(
-                image: domainO + backdrop[selectedIndex],
-                fit: BoxFit.cover, 
-                placeholder: domain + backdrop[0],
-              )),
+            color: Colors.black,
+            duration: Duration(milliseconds: 500),
+            width: double.infinity,
+            child: Image.network(
+              domainO + backdrop[selectedIndex],
+              alignment: Alignment.center,
+              fit: BoxFit.cover,
+              gaplessPlayback: true,
+            ),
+          ),
         ),
-        Container(
-          decoration: BoxDecoration(
-              backgroundBlendMode: BlendMode.overlay,
-              gradient: LinearGradient(
-                  colors: [Colors.black, Colors.black, Colors.transparent],
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  stops: [0.0, 0.2, 1.0])),
-        ),
-        MovieView(this)
-      ],
-    );
+      ),
+      Container(
+        decoration: BoxDecoration(
+            color: Colors.white,
+            gradient: LinearGradient(
+                begin: FractionalOffset.topCenter,
+                end: FractionalOffset.bottomCenter,
+                colors: [
+                  Colors.grey.withOpacity(0.0),
+                  Colors.black,
+                  Colors.black,
+                ],
+                stops: [
+                  0,
+                  0.6,
+                  1.0
+                ])),
+      ),
+      MovieView(this)
+    ]);
+
+    //working in Web
+    // return Stack(
+    //   fit: StackFit.expand,
+    //   children: <Widget>[
+    // Opacity(
+    //   opacity: 0.0,
+    //   child: AnimatedContainer(
+    //     color: Colors.black,
+    //     duration: Duration(milliseconds: 500),
+    //     height: MediaQuery.of(context).size.height * 0.8,
+    //     width: double.infinity,
+    //     child: Image.network(
+    //       domainO + backdrop[selectedIndex],
+    //       fit: BoxFit.cover,
+    //       gaplessPlayback: true,
+    //     ),
+    //   ),
+    // ),
+    //     Container(
+    //       decoration: BoxDecoration(
+    //         color: Colors.white,
+    //           backgroundBlendMode: BlendMode.overlay,
+    //           gradient: LinearGradient(
+    //               colors: [Colors.black, Colors.black, Colors.transparent],
+    //               begin: FractionalOffset.bottomCenter,
+    //               end: FractionalOffset.topCenter,
+    //               stops: [0.0, 0.2, 1.0])),
+    //     ),
+    //     MovieView(this)
+    //   ],
+    // );
   }
 }
 
@@ -124,7 +203,7 @@ class MovieView extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           Expanded(
-            child: HeaderMovieView(),
+            child: HeaderMovieView(parent),
             flex: 9,
           ),
           Expanded(
@@ -171,15 +250,18 @@ class _MovieListViewState extends State<MovieListView> {
                     child: Container(
                       child: ClipRRect(
                         borderRadius: new BorderRadius.circular(8.0),
-                        child: Image.network(domain + movies[index],
-                            fit: BoxFit.cover),
+                        child: Image.network(
+                          domain + movies[index],
+                          fit: BoxFit.cover,
+                          filterQuality: FilterQuality.low,
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-              curve: Curves.easeOut,
-              duration: Duration(milliseconds: 200));
+              curve: Curves.easeInOut,
+              duration: Duration(milliseconds: 300));
         },
         separatorBuilder: (context, index) {
           return SizedBox(
@@ -190,10 +272,23 @@ class _MovieListViewState extends State<MovieListView> {
 }
 
 class HeaderMovieView extends StatelessWidget {
+  _HomeViewState parent;
+
+  HeaderMovieView(this.parent);
+
+  _launchURL(String movieID) async {
+    var url = 'https://youtube.com/embed/$movieID?autoplay=1;autohide=0;hd=0;';
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(30, 30, 30, 30),
+      padding: EdgeInsets.fromLTRB(30, 30, 20, 30),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.max,
@@ -201,9 +296,6 @@ class HeaderMovieView extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              SizedBox(
-                width: 10,
-              ),
               Text(
                 "Movie",
                 style: TextStyle(fontSize: 18, color: Colors.grey.shade200),
@@ -228,27 +320,24 @@ class HeaderMovieView extends StatelessWidget {
               ),
             ],
           ),
-          Spacer(),
+          Spacer(flex: 100,),
           Text(
-            "Joker",
+            movieTitle[parent.selectedIndex],
             style: TextStyle(
                 color: Colors.white, fontSize: 35, fontWeight: FontWeight.bold),
           ),
-          SizedBox(
-            height: 10,
-          ),
-          Text(
-            "2019",
-            style: TextStyle(color: Colors.white, fontSize: 20),
-          ),
-          SizedBox(
-            height: 20,
-          ),
           Row(
             children: <Widget>[
+              Text(
+                "2019",
+                style: TextStyle(color: Colors.white, fontSize: 20),
+              ),
+              SizedBox(width: 20,),
               RaisedButton(
                 color: Colors.black,
-                onPressed: () {},
+                onPressed: () {
+                  _launchURL(movieId[parent.selectedIndex]);
+                },
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30)),
                 child: Text(
@@ -258,7 +347,8 @@ class HeaderMovieView extends StatelessWidget {
                 ),
               ),
             ],
-          )
+          ),
+          Spacer(),
         ],
       ),
     );
