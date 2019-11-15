@@ -1,7 +1,8 @@
 import 'dart:ui';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:html' as html;
 
 void main() => runApp(MovieApp());
 
@@ -277,11 +278,18 @@ class HeaderMovieView extends StatelessWidget {
   HeaderMovieView(this.parent);
 
   _launchURL(String movieID) async {
+
     var url = 'https://youtube.com/embed/$movieID?autoplay=1;autohide=0;hd=0;';
-    if (await canLaunch(url)) {
-      await launch(url);
+
+    //check platform
+    if (!kIsWeb) {
+      if (await canLaunch(url)) {
+        await launch(url);
+      } else {
+        throw 'Could not launch $url';
+      }
     } else {
-      throw 'Could not launch $url';
+      html.window.location.href = url;
     }
   }
 
